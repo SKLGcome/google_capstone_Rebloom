@@ -3,12 +3,22 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { getLatestDiagnosis } from '../../lib/api';
 import { getDisplayNickname } from '../../lib/user';
 import { typeMap } from '../../lib/typeMapper';
 
 type ScoreKey = 'energy' | 'direction' | 'action';
 
 type Scores = Partial<Record<ScoreKey, number>>;
+
+type DiagnosisResult = {
+  type?: string;
+  summary?: string;
+  strengthTopics?: string[];
+  needTopics?: string[];
+  goal?: string;
+  scores?: Scores;
+};
 
 const scoreMeta: Record<ScoreKey, { label: string; description: string }> = {
   energy: {
@@ -71,6 +81,7 @@ const getTodayAction = (focus: ScoreKey, needTopics: string[], goal?: string) =>
 export default function Result() {
   const router = useRouter();
   const [nickname, setNickname] = useState('나');
+  const [result, setResult] = useState<DiagnosisResult | null>(null);
   const {
     type,
     summary,
@@ -81,18 +92,46 @@ export default function Result() {
     reset,
   } = useLocalSearchParams();
 
-  const recoveryType = Array.isArray(type) ? type[0] : type;
-  const typeInfo = typeMap[recoveryType as keyof typeof typeMap];
-  const strengths = parseJsonParam<string[]>(strengthTopics, []);
-  const needs = parseJsonParam<string[]>(needTopics, []);
-  const scores = parseJsonParam<Scores>(scoresParam, {});
-  const focus = getPrimaryFocus(scores);
+  const paramRecoveryType = Array.isArray(type) ? type[0] : type;
+  const paramStrengths = parseJsonParam<string[]>(strengthTopics, []);
+  const paramNeeds = parseJsonParam<string[]>(needTopics, []);
+  const paramScores = parseJsonParam<Scores>(scoresParam, {});
   const retryReset = Array.isArray(reset) ? reset[0] : reset;
-  const goalText = Array.isArray(goal) ? goal[0] : goal;
-  const summaryText = Array.isArray(summary) ? summary[0] : summary;
+  const paramGoalText = Array.isArray(goal) ? goal[0] : goal;
+  const paramSummaryText = Array.isArray(summary) ? summary[0] : summary;
+
+  const recoveryType = result?.type;
+  const typeInfo = typeMap[recoveryType as keyof typeof typeMap];
+  const summaryText = result?.summary;
+  const strengths = result?.strengthTopics ?? [];
+  const needs = result?.needTopics ?? [];
+  const goalText = result?.goal;
+  const scores = result?.scores ?? {};
+  const focus = getPrimaryFocus(scores);
 
   useEffect(() => {
     getDisplayNickname().then(setNickname);
+  }, []);
+
+  useEffect(() => {
+    const loadLatestDiagnosis = async () => {
+      if (paramRecoveryType) {
+        setResult({
+          type: paramRecoveryType,
+          summary: paramSummaryText,
+          strengthTopics: paramStrengths,
+          needTopics: paramNeeds,
+          goal: paramGoalText,
+          scores: paramScores,
+        });
+        return;
+      }
+
+      const data = await getLatestDiagnosis();
+      setResult(data);
+    };
+
+    loadLatestDiagnosis();
   }, []);
 
   return (

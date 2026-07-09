@@ -73,6 +73,13 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="chat_room"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
         name="result"
         options={{
           title: '결과',

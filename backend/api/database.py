@@ -19,3 +19,10 @@ SessionLocal = sessionmaker(
 
 # 모든 모델이 상속받는 Base
 Base = declarative_base()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

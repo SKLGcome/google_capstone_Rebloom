@@ -92,3 +92,56 @@ export async function runDiagnosis(messages: DiagnosisMessage[]) {
 
   return data;
 }
+
+export const getLatestDiagnosis = async () => {
+  const token = await AsyncStorage.getItem('access_token');
+
+  const response = await fetch(`${API_URL}/diagnosis/latest`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('최근 진단 결과 조회 실패');
+  }
+
+  return response.json();
+};
+
+export async function getRoomMessages(roomId: string) {
+  const token = await AsyncStorage.getItem('access_token');
+
+  const response = await fetch(`${API_URL}/rooms/${roomId}/messages`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.detail || '메시지 조회 실패');
+  }
+
+  return response.json();
+}
+
+export async function sendRoomMessage(roomId: string, content: string) {
+  const token = await AsyncStorage.getItem('access_token');
+
+  const response = await fetch(`${API_URL}/rooms/${roomId}/send`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ content }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.detail || '메시지 전송 실패');
+  }
+
+  return response.json();
+}
