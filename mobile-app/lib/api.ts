@@ -1,6 +1,58 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
+
 export const API_URL =
   'https://payton-unconfided-reluctantly.ngrok-free.dev';
+
+const AUTH_STORAGE_KEYS = ['access_token', 'nickname', 'hasOnboarded'];
+const SESSION_EXPIRED_MESSAGE = '로그인이 만료되었습니다. 다시 로그인해주세요.';
+
+let isRedirectingToLogin = false;
+
+const clearSessionAndRedirectToLogin = async () => {
+  await AsyncStorage.multiRemove(AUTH_STORAGE_KEYS);
+
+  if (!isRedirectingToLogin) {
+    isRedirectingToLogin = true;
+    router.replace('/login');
+  }
+};
+
+const parseJsonSafely = async (response: Response) => {
+  return response.json().catch(() => null);
+};
+
+const handleApiResponse = async (response: Response, fallbackMessage: string): Promise<any> => {
+  const data = await parseJsonSafely(response);
+
+  if (response.status === 401) {
+    await clearSessionAndRedirectToLogin();
+    throw new Error(data?.detail || SESSION_EXPIRED_MESSAGE);
+  }
+
+  if (!response.ok) {
+    throw new Error(data?.detail || fallbackMessage);
+  }
+
+  return data;
+};
+
+export async function fetchWithAuth(path: string, options: RequestInit = {}) {
+  const token = await AsyncStorage.getItem('access_token');
+
+  if (!token) {
+    await clearSessionAndRedirectToLogin();
+    throw new Error(SESSION_EXPIRED_MESSAGE);
+  }
+
+  return fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      ...options.headers,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
 
 export async function getRecommendation(type: string) {
   const response = await fetch(`${API_URL}/recommend`, {
@@ -26,13 +78,7 @@ export async function login(user_id: string, password: string) {
     }),
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || '로그인 실패');
-  }
-
-  return data;
+  return handleApiResponse(response, '로그인 실패');
 }
 
 export async function signup(
@@ -52,13 +98,7 @@ export async function signup(
     }),
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || '회원가입 실패');
-  }
-
-  return data;
+  return handleApiResponse(response, '회원가입 실패');
 }
 
 type DiagnosisMessage = {
@@ -67,81 +107,39 @@ type DiagnosisMessage = {
 };
 
 export async function runDiagnosis(messages: DiagnosisMessage[]) {
-  const token = await AsyncStorage.getItem('access_token');
-
-  if (!token) {
-    throw new Error('로그인이 필요합니다.');
-  }
-
-  const response = await fetch(`${API_URL}/diagnosis`, {
+  const response = await fetchWithAuth('/diagnosis', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       messages,
     }),
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || '진단 실패');
-  }
-
-  return data;
+  return handleApiResponse(response, '진단 실패');
 }
 
 export const getLatestDiagnosis = async () => {
-  const token = await AsyncStorage.getItem('access_token');
+  const response = await fetchWithAuth('/diagnosis/latest');
 
-  const response = await fetch(`${API_URL}/diagnosis/latest`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('최근 진단 결과 조회 실패');
-  }
-
-  return response.json();
+  return handleApiResponse(response, '최근 진단 결과 조회 실패');
 };
 
 export async function getRoomMessages(roomId: string) {
-  const token = await AsyncStorage.getItem('access_token');
+  const response = await fetchWithAuth(`/rooms/${roomId}/messages`);
 
-  const response = await fetch(`${API_URL}/rooms/${roomId}/messages`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => null);
-    throw new Error(error?.detail || '메시지 조회 실패');
-  }
-
-  return response.json();
+  return handleApiResponse(response, '메시지 조회 실패');
 }
 
 export async function sendRoomMessage(roomId: string, content: string) {
-  const token = await AsyncStorage.getItem('access_token');
-
-  const response = await fetch(`${API_URL}/rooms/${roomId}/send`, {
+  const response = await fetchWithAuth(`/rooms/${roomId}/send`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ content }),
   });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => null);
-    throw new Error(error?.detail || '메시지 전송 실패');
-  }
-
-  return response.json();
+  return handleApiResponse(response, '메시지 전송 실패');
 }

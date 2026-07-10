@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from api.database import get_db
-from api.models import ChatMessage
+from api.models import ChatMessage, User
 from api.routers.auth import get_current_user
 from api.neo4j import graph
 
@@ -49,6 +49,7 @@ def send_message(
         "id": message.id,
         "room_id": message.room_id,
         "user_id": message.user_id,
+        "nickname": current_user.nickname,
         "content": message.content,
         "created_at": message.created_at,
     }
@@ -75,7 +76,8 @@ def get_messages(
         raise HTTPException(status_code=403, detail="이 채팅방에 참여한 유저가 아닙니다.")
 
     messages = (
-        db.query(ChatMessage)
+        db.query(ChatMessage, User.nickname)
+        .join(User, ChatMessage.user_id == User.id)
         .filter(ChatMessage.room_id == room_id)
         .order_by(ChatMessage.created_at.asc())
         .all()
@@ -83,11 +85,12 @@ def get_messages(
 
     return [
         {
-            "id": msg.id,
-            "room_id": msg.room_id,
-            "user_id": msg.user_id,
-            "content": msg.content,
-            "created_at": msg.created_at,
+            "id": message.id,
+            "room_id": message.room_id,
+            "user_id": message.user_id,
+            "nickname": nickname,
+            "content": message.content,
+            "created_at": message.created_at,
         }
-        for msg in messages
+        for message, nickname in messages
     ]

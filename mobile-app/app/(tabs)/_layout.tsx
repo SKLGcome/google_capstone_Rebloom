@@ -39,7 +39,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="community"
+        name="chat_room"
         options={{
           title: '커뮤니티',
           tabBarIcon: ({ color }) => (
@@ -67,13 +67,6 @@ export default function TabLayout() {
 
       <Tabs.Screen
         name="diagnose_chat"
-        options={{
-          href: null,
-        }}
-      />
-
-      <Tabs.Screen
-        name="chat_room"
         options={{
           href: null,
         }}

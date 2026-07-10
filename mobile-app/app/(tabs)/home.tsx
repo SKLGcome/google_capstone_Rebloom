@@ -61,7 +61,7 @@ export default function Home() {
         </Text>
       </View>
 
-      <TouchableOpacity onPress={() => router.push('/community')}>
+      <TouchableOpacity onPress={() => router.push('/chat_room')}>
         <Text style={styles.link}>커뮤니티로 이동하기 →</Text>
       </TouchableOpacity>
     </ScrollView>

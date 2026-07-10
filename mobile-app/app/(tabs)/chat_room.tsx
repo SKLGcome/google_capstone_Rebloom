@@ -1,6 +1,16 @@
 import { getLatestDiagnosis, getRoomMessages, sendRoomMessage } from '@/lib/api';
 import { useEffect, useState } from 'react';
-import { Alert, Button, ScrollView, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function ChatRoom() {
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -48,40 +58,187 @@ export default function ChatRoom() {
 
   if (!roomId) {
     return (
-      <View style={{ flex: 1, padding: 20 }}>
-        <Text>채팅방을 불러오는 중...</Text>
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>채팅방을 불러오는 중...</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, padding: 20 }}>
-      <Text style={{ marginBottom: 12, fontWeight: 'bold' }}>
-        {roomId} 채팅방
-      </Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View style={styles.header}>
+        <Text style={styles.headerLabel}>내 유형 커뮤니티</Text>
+        <Text style={styles.headerTitle}>{roomId} 채팅방</Text>
+        <Text style={styles.headerSubtext}>
+          같은 회복 유형의 사람들과 가볍게 이야기를 나눠보세요.
+        </Text>
+      </View>
 
-      <ScrollView style={{ flex: 1 }}>
-        {messages.map((msg) => (
-          <View key={msg.id} style={{ marginBottom: 12 }}>
-            <Text>user {msg.user_id}</Text>
-            <Text>{msg.content}</Text>
+      <ScrollView
+        style={styles.messageArea}
+        contentContainerStyle={styles.messageList}
+        showsVerticalScrollIndicator={false}
+      >
+        {messages.length > 0 ? (
+          messages.map((msg) => (
+            <View key={msg.id} style={styles.messageBubble}>
+              <Text style={styles.messageAuthor}>user {msg.nickname}</Text>
+              <Text style={styles.messageText}>{msg.content}</Text>
+            </View>
+          ))
+        ) : (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyTitle}>아직 메시지가 없어요</Text>
+            <Text style={styles.emptyText}>첫 이야기를 남겨보세요.</Text>
           </View>
-        ))}
+        )}
       </ScrollView>
 
-      <TextInput
-        value={input}
-        onChangeText={setInput}
-        placeholder="메시지를 입력하세요"
-        style={{
-          borderWidth: 1,
-          padding: 12,
-          borderRadius: 8,
-          marginBottom: 8,
-        }}
-      />
+      <View style={styles.inputBar}>
+        <TextInput
+          value={input}
+          onChangeText={setInput}
+          placeholder="메시지를 입력하세요"
+          placeholderTextColor="#8A938D"
+          style={styles.input}
+          multiline
+        />
 
-      <Button title="전송" onPress={handleSend} />
-    </View>
+        <TouchableOpacity
+          style={[styles.sendButton, !input.trim() && styles.sendButtonDisabled]}
+          onPress={handleSend}
+          disabled={!input.trim()}
+        >
+          <Text style={styles.sendButtonText}>전송</Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F7F4EF',
+    padding: 20,
+    paddingTop: 56,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    backgroundColor: '#F7F4EF',
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    color: '#526157',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  header: {
+    alignItems: 'center',
+    backgroundColor: '#C6E6D0',
+    borderRadius: 12,
+    marginBottom: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+  },
+  headerLabel: {
+    color: '#2F7D55',
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  headerTitle: {
+    color: '#2F3A33',
+    fontSize: 28,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  headerSubtext: {
+    color: '#526157',
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  messageArea: {
+    flex: 1,
+  },
+  messageList: {
+    paddingBottom: 16,
+  },
+  messageBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginBottom: 10,
+    maxWidth: '88%',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  messageAuthor: {
+    color: '#6DBF87',
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 5,
+  },
+  messageText: {
+    color: '#343C36',
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  emptyBox: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginTop: 20,
+    padding: 24,
+  },
+  emptyTitle: {
+    color: '#343C36',
+    fontSize: 17,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  emptyText: {
+    color: '#7A827B',
+    fontSize: 14,
+  },
+  inputBar: {
+    alignItems: 'flex-end',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 10,
+    padding: 10,
+  },
+  input: {
+    color: '#343C36',
+    flex: 1,
+    fontSize: 15,
+    maxHeight: 96,
+    minHeight: 42,
+    paddingHorizontal: 4,
+    paddingVertical: 10,
+  },
+  sendButton: {
+    alignItems: 'center',
+    backgroundColor: '#6DBF87',
+    borderRadius: 10,
+    height: 42,
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#B9C7BD',
+  },
+  sendButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+});

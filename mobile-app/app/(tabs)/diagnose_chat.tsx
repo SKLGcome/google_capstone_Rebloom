@@ -1,6 +1,5 @@
 ﻿import { Audio } from 'expo-av';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Speech from 'expo-speech';
 import { useEffect, useState } from 'react';
 import {
@@ -15,7 +14,7 @@ import {
   View,
 } from 'react-native';
 
-import { API_URL } from '../../lib/api';
+import { API_URL, runDiagnosis } from '../../lib/api';
 import { getDisplayNickname } from '../../lib/user';
 
 type Message = {
@@ -65,28 +64,7 @@ export default function Diagnose() {
   };
 
   const goResultIfReady = async (messages: Message[]) => {
-    const accessToken = await AsyncStorage.getItem('access_token');
-
-    if (!accessToken) {
-      throw new Error('로그인이 필요합니다.');
-    }
-
-    const response = await fetch(`${API_URL}/diagnosis`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        messages,
-      }),
-    });
-  // 실제 진단에 대한 값 받는곳
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.detail || '진단 실패');
-    }
+    const result = await runDiagnosis(messages);
 
     router.replace({
       pathname: '/(tabs)/result',
