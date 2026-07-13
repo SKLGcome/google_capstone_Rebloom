@@ -8,7 +8,7 @@ from api.database import Base, engine
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
-from api.routers import auth, chat, diagnosis,chat_rooms  # noqa: E402
+from api.routers import auth, chat, chat_rooms, diagnosis, missions  # noqa: E402
 
 app = FastAPI(title="RE:Bloom API")
 
@@ -24,3 +24,4 @@ app.include_router(auth.router)
 app.include_router(diagnosis.router)
 app.include_router(chat.router)
 app.include_router(chat_rooms.router)
+app.include_router(missions.router)

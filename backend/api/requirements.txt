@@ -4,6 +4,11 @@ python-dotenv
 langchain-neo4j
 langchain-openai
 langchain-google-genai
+langchain-classic
+langchain-community
+langchain-text-splitters
+numpy
+pypdf
 
 sqlalchemy
 passlib[bcrypt]

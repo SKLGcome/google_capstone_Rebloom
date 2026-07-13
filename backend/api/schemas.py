@@ -26,3 +26,7 @@ class GraphProfileResult(BaseModel):
     need_topics: List[str]
     goal: str
     experience_tags: List[str]
+
+
+class RoomMessage(BaseModel):
+    content: str

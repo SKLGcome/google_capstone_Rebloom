@@ -85,7 +85,7 @@ export default function ChatRoom() {
         {messages.length > 0 ? (
           messages.map((msg) => (
             <View key={msg.id} style={styles.messageBubble}>
-              <Text style={styles.messageAuthor}>user {msg.nickname}</Text>
+              <Text style={styles.messageAuthor}>{msg.nickname}</Text>
               <Text style={styles.messageText}>{msg.content}</Text>
             </View>
           ))

@@ -1,7 +1,7 @@
 import { FontAwesome } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { getLatestDiagnosis } from '../../lib/api';
 import { getDisplayNickname } from '../../lib/user';
@@ -79,7 +79,6 @@ const getTodayAction = (focus: ScoreKey, needTopics: string[], goal?: string) =>
 };
 
 export default function Result() {
-  const router = useRouter();
   const [nickname, setNickname] = useState('나');
   const [result, setResult] = useState<DiagnosisResult | null>(null);
   const {
@@ -89,14 +88,12 @@ export default function Result() {
     needTopics,
     goal,
     scores: scoresParam,
-    reset,
   } = useLocalSearchParams();
 
   const paramRecoveryType = Array.isArray(type) ? type[0] : type;
   const paramStrengths = parseJsonParam<string[]>(strengthTopics, []);
   const paramNeeds = parseJsonParam<string[]>(needTopics, []);
   const paramScores = parseJsonParam<Scores>(scoresParam, {});
-  const retryReset = Array.isArray(reset) ? reset[0] : reset;
   const paramGoalText = Array.isArray(goal) ? goal[0] : goal;
   const paramSummaryText = Array.isArray(summary) ? summary[0] : summary;
 
@@ -216,18 +213,6 @@ export default function Result() {
         <Text style={styles.cardLabel}>오늘의 한 걸음</Text>
         <Text style={styles.actionText}>{getTodayAction(focus, needs, goalText)}</Text>
       </View>
-
-      <TouchableOpacity
-        style={styles.retryButton}
-        onPress={() =>
-          router.push({
-            pathname: '/diagnose_chat',
-            params: { reset: retryReset ?? Date.now().toString() },
-          })
-        }
-      >
-        <Text style={styles.retryButtonText}>다시 진단하기</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -419,16 +404,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     lineHeight: 27,
-  },
-  retryButton: {
-    alignItems: 'center',
-    backgroundColor: '#6DBF87',
-    borderRadius: 24,
-    paddingVertical: 15,
-  },
-  retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
   },
 });

@@ -49,11 +49,11 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="mypage"
+        name="result"
         options={{
-          title: '마이',
+          title: '결과',
           tabBarIcon: ({ color }) => (
-            <TabBarIcon name="user" color={color} />
+            <TabBarIcon name="heart" color={color} />
           ),
         }}
       />
@@ -73,11 +73,11 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="result"
+        name="mypage"
         options={{
-          title: '결과',
+          title: '마이',
           tabBarIcon: ({ color }) => (
-            <TabBarIcon name="heart" color={color} />
+            <TabBarIcon name="user" color={color} />
           ),
         }}
       />
