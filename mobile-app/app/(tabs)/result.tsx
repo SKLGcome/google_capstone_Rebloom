@@ -97,13 +97,24 @@ export default function Result() {
   const paramGoalText = Array.isArray(goal) ? goal[0] : goal;
   const paramSummaryText = Array.isArray(summary) ? summary[0] : summary;
 
-  const recoveryType = result?.type;
+  const routedResult: DiagnosisResult | null = paramRecoveryType
+    ? {
+        type: paramRecoveryType,
+        summary: paramSummaryText,
+        strengthTopics: paramStrengths,
+        needTopics: paramNeeds,
+        goal: paramGoalText,
+        scores: paramScores,
+      }
+    : null;
+  const displayedResult = routedResult ?? result;
+  const recoveryType = displayedResult?.type;
   const typeInfo = typeMap[recoveryType as keyof typeof typeMap];
-  const summaryText = result?.summary;
-  const strengths = result?.strengthTopics ?? [];
-  const needs = result?.needTopics ?? [];
-  const goalText = result?.goal;
-  const scores = result?.scores ?? {};
+  const summaryText = displayedResult?.summary;
+  const strengths = displayedResult?.strengthTopics ?? [];
+  const needs = displayedResult?.needTopics ?? [];
+  const goalText = displayedResult?.goal;
+  const scores = displayedResult?.scores ?? {};
   const focus = getPrimaryFocus(scores);
 
   useEffect(() => {
@@ -113,14 +124,6 @@ export default function Result() {
   useEffect(() => {
     const loadLatestDiagnosis = async () => {
       if (paramRecoveryType) {
-        setResult({
-          type: paramRecoveryType,
-          summary: paramSummaryText,
-          strengthTopics: paramStrengths,
-          needTopics: paramNeeds,
-          goal: paramGoalText,
-          scores: paramScores,
-        });
         return;
       }
 
@@ -129,7 +132,7 @@ export default function Result() {
     };
 
     loadLatestDiagnosis();
-  }, []);
+  }, [paramRecoveryType]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>

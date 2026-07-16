@@ -1,5 +1,6 @@
 ﻿import { Audio } from 'expo-av';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Speech from 'expo-speech';
 import { useEffect, useState } from 'react';
 import {
@@ -65,6 +66,7 @@ export default function Diagnose() {
 
   const goResultIfReady = async (messages: Message[]) => {
     const result = await runDiagnosis(messages);
+    await AsyncStorage.setItem('hasOnboarded', 'true');
 
     router.replace({
       pathname: '/(tabs)/result',

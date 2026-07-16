@@ -1,6 +1,8 @@
 """미션 문서의 벡터 인덱스를 생성하고 저장한다."""
 
+import hashlib
 import json
+import logging
 import os
 from pathlib import Path
 
@@ -10,7 +12,11 @@ from langchain_core.documents import Document
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from pydantic import SecretStr
 
-from api.rag.document_loader import BACKEND_DIR, load_mission_documents
+from api.rag.document_loader import (
+    BACKEND_DIR,
+    MISSION_DOCUMENTS_DIR,
+    load_mission_documents,
+)
 
 
 load_dotenv(BACKEND_DIR / ".env")
@@ -18,9 +24,82 @@ load_dotenv(BACKEND_DIR / ".env")
 MISSION_INDEX_DIR = BACKEND_DIR / "data" / "mission_index"
 VECTOR_INDEX_PATH = MISSION_INDEX_DIR / "vectors.npz"
 DOCUMENT_INDEX_PATH = MISSION_INDEX_DIR / "documents.json"
+MANIFEST_PATH = MISSION_INDEX_DIR / "manifest.json"
 
 DEFAULT_EMBEDDING_MODEL = "models/gemini-embedding-001"
 DEFAULT_BATCH_SIZE = 100
+logger = logging.getLogger(__name__)
+
+
+def create_source_manifest(
+    documents_dir: str | Path = MISSION_DOCUMENTS_DIR,
+) -> dict:
+    """Create a stable fingerprint of every source PDF used by the index."""
+
+    directory = Path(documents_dir)
+    if not directory.is_dir():
+        raise FileNotFoundError(f"Mission documents directory not found: {directory}")
+
+    files = []
+    for file_path in sorted(directory.rglob("*.pdf")):
+        digest = hashlib.sha256()
+        with file_path.open("rb") as source:
+            for block in iter(lambda: source.read(1024 * 1024), b""):
+                digest.update(block)
+
+        files.append(
+            {
+                "path": file_path.relative_to(directory).as_posix(),
+                "sha256": digest.hexdigest(),
+                "size": file_path.stat().st_size,
+            }
+        )
+
+    return {"version": 1, "files": files}
+
+
+def mission_index_needs_rebuild(
+    documents_dir: str | Path = MISSION_DOCUMENTS_DIR,
+    index_dir: str | Path = MISSION_INDEX_DIR,
+) -> bool:
+    """Return whether the index is missing or differs from the source PDFs."""
+
+    target_dir = Path(index_dir)
+    required_paths = (
+        target_dir / DOCUMENT_INDEX_PATH.name,
+        target_dir / VECTOR_INDEX_PATH.name,
+        target_dir / MANIFEST_PATH.name,
+    )
+    if not all(path.is_file() for path in required_paths):
+        return True
+
+    try:
+        saved_manifest = json.loads(required_paths[2].read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return True
+
+    return saved_manifest != create_source_manifest(documents_dir)
+
+
+def ensure_mission_index(
+    documents_dir: str | Path = MISSION_DOCUMENTS_DIR,
+    index_dir: str | Path = MISSION_INDEX_DIR,
+) -> bool:
+    """Build the index only when source PDFs were added, removed, or changed."""
+
+    if not mission_index_needs_rebuild(documents_dir, index_dir):
+        return False
+
+    logger.info("Mission source documents changed; rebuilding the search index")
+    documents = load_mission_documents(documents_dir=documents_dir)
+    build_mission_index(documents=documents, index_dir=index_dir)
+    manifest_path = Path(index_dir) / MANIFEST_PATH.name
+    manifest_path.write_text(
+        json.dumps(create_source_manifest(documents_dir), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    logger.info("Mission search index rebuild completed")
+    return True
 
 
 def get_embedding_model(

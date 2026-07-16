@@ -4,6 +4,7 @@ import numpy as np
 from langchain_core.embeddings import Embeddings
 from langchain_core.messages import AIMessage
 
+from api.mission_service import summarize_community_messages
 from api.rag.query_builder import build_retrieval_query
 from api.rag.retriever import build_hybrid_retriever
 
@@ -22,15 +23,22 @@ class FakeSummaryLlm:
         return AIMessage(content="부담 없이 할 수 있는 가벼운 산책을 선호한다.")
 
 
-def test_build_retrieval_query_accepts_message_records():
-    query = build_retrieval_query(
+class FakeQueryLlm:
+    def invoke(self, messages):
+        assert "부담 없이 할 수 있는 가벼운 산책을 선호한다." in messages[-1].content
+        return AIMessage(content="REP 낮은 에너지 5분 가벼운 산책")
+
+
+def test_summarize_messages_and_build_retrieval_query():
+    summary = summarize_community_messages(
         "rep",
         [{"content": "가벼운 산책"}, {"content": "  "}],
         llm=FakeSummaryLlm(),
     )
+    result = build_retrieval_query("rep", summary, llm=FakeQueryLlm())
 
-    assert "회복 유형: REP" in query
-    assert "부담 없이 할 수 있는 가벼운 산책을 선호한다." in query
+    assert result.community_summary == summary
+    assert result.query == "REP 낮은 에너지 5분 가벼운 산책"
 
 
 def test_hybrid_retriever_uses_local_indexes(tmp_path):

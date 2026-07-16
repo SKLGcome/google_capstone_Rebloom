@@ -24,7 +24,8 @@ export default function LoginScreen() {
 
       await AsyncStorage.setItem('access_token', result.access_token);
       await saveNicknameFromAuth(result);
-      router.replace('/home');
+      // 일반 로그인과 만료 후 재로그인은 온보딩을 반복하지 않고 홈으로 이동합니다.
+      router.replace('/(tabs)/home');
     } catch (error: any) {
       Alert.alert('로그인 실패', error.message);
     }

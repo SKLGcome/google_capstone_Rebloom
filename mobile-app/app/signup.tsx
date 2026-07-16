@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -8,7 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { signup } from '../lib/api';
+import { login, signup } from '../lib/api';
+import { saveNicknameFromAuth } from '../lib/user';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -20,17 +22,17 @@ export default function SignupScreen() {
   const handleSignup = async () => {
     try {
       await signup(userId, password, nickname);
+      const result = await login(userId, password);
 
-      Alert.alert(
-        '회원가입 성공',
-        '이제 로그인해주세요.',
-        [
-          {
-            text: '확인',
-            onPress: () => router.replace('/login'),
-          },
-        ]
-      );
+      await AsyncStorage.multiSet([
+        ['access_token', result.access_token],
+        ['hasOnboarded', 'false'],
+      ]);
+      await saveNicknameFromAuth(result);
+      router.replace({
+        pathname: '/(tabs)/diagnose_chat',
+        params: { reset: Date.now().toString() },
+      });
     } catch (error: any) {
       Alert.alert('회원가입 실패', error.message);
     }

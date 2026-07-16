@@ -4,7 +4,8 @@ import { router } from 'expo-router';
 export const API_URL =
   'https://payton-unconfided-reluctantly.ngrok-free.dev';
 
-const AUTH_STORAGE_KEYS = ['access_token', 'nickname', 'hasOnboarded'];
+// 로그인 세션만 제거하고, 최초 진단 완료 여부는 기기에 유지합니다.
+const AUTH_STORAGE_KEYS = ['access_token', 'nickname'];
 const SESSION_EXPIRED_MESSAGE = '로그인이 만료되었습니다. 다시 로그인해주세요.';
 
 let isRedirectingToLogin = false;
@@ -142,4 +143,32 @@ export async function sendRoomMessage(roomId: string, content: string) {
   });
 
   return handleApiResponse(response, '메시지 전송 실패');
+}
+
+export type DailyMission = {
+  id: number;
+  mission_name: string;
+  mission_date: string;
+  recovery_type: string;
+  mission_content: string;
+  created_at: string;
+  is_completed: boolean;
+  completed_at: string | null;
+};
+
+export async function getRoomDailyMission(roomId: string): Promise<DailyMission> {
+  const response = await fetchWithAuth(
+    `/missions/rooms/${encodeURIComponent(roomId)}/today`
+  );
+
+  return handleApiResponse(response, '오늘의 미션 조회 실패');
+}
+
+export async function completeRoomDailyMission(roomId: string) {
+  const response = await fetchWithAuth(
+    `/missions/rooms/${encodeURIComponent(roomId)}/today/complete`,
+    { method: 'POST' }
+  );
+
+  return handleApiResponse(response, '미션 인증 실패');
 }

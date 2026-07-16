@@ -16,7 +16,6 @@ export default function MyPage() {
   const handleLogout = async () => {
     await AsyncStorage.removeItem('access_token');
     await AsyncStorage.removeItem(NICKNAME_KEY);
-    await AsyncStorage.removeItem('hasOnboarded');
     router.replace('/login');
   };
 
