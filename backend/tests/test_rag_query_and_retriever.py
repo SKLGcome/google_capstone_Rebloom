@@ -4,7 +4,7 @@ import numpy as np
 from langchain_core.embeddings import Embeddings
 from langchain_core.messages import AIMessage
 
-from api.mission_service import summarize_community_messages
+from api.missions.service import summarize_community_messages
 from api.rag.query_builder import build_retrieval_query
 from api.rag.retriever import build_hybrid_retriever
 

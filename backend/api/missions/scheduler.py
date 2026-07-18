@@ -4,7 +4,7 @@ import asyncio
 import logging
 from datetime import date, datetime, time, timedelta, timezone
 
-from api.mission_workflow import generate_all_daily_missions
+from api.missions.workflow import generate_all_daily_missions
 
 
 logger = logging.getLogger(__name__)

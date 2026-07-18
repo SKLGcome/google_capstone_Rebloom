@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
-from api.agent import run_chat_agent
+from api.diagnosis.agent import run_chat_agent
 from api.gemini_stt import transcribe_audio_with_gemini
 
 router = APIRouter()

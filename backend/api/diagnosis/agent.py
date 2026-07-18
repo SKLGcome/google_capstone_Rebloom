@@ -10,7 +10,7 @@ from langchain_core.messages import ToolMessage
 from langgraph.runtime import Runtime
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-from api.tools import diagnosis_tools
+from api.diagnosis.tools import diagnosis_tools
 
 
 class DiagnosisState(AgentState):

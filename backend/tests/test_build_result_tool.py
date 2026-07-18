@@ -1,6 +1,6 @@
 import unittest
 
-from api.tools import build_result_tool
+from api.diagnosis.tools import build_result_tool
 
 
 class BuildResultToolTest(unittest.TestCase):

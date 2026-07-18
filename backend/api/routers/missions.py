@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.mission_service import get_daily_mission
+from api.missions.service import get_daily_mission
 from api.models import MissionCompletion
 from api.recovery_types import normalize_recovery_type
 from api.routers.auth import get_current_user

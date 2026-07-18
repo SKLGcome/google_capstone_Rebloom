@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 from api.routers import auth, chat, chat_rooms, diagnosis, missions  # noqa: E402
-from api.mission_scheduler import run_daily_mission_scheduler  # noqa: E402
+from api.missions.scheduler import run_daily_mission_scheduler  # noqa: E402
 from api.rag.indexer import ensure_mission_index  # noqa: E402
 
 

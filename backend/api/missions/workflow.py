@@ -3,7 +3,7 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from api.database import SessionLocal
-from api.mission_service import (
+from api.missions.service import (
     generate_mission,
     get_daily_mission,
     load_room_context,

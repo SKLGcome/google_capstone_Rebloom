@@ -2,7 +2,7 @@ import traceback
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from api.agent import run_diagnosis_agent
+from api.diagnosis.agent import run_diagnosis_agent
 from api.models import User
 from api.neo4j import graph
 from api.routers.auth import get_current_user

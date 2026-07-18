@@ -1,10 +1,10 @@
 from langchain_core.tools import tool
 
-from api.diagnosis_service import (
+from api.diagnosis.service import (
     build_user_graph_data,
     save_user_graph_data_to_graph,
 )
-from api.mission_service import load_all_type_contexts
+from api.missions.service import load_all_type_contexts
 
 
 @tool
