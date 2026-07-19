@@ -1,0 +1,10 @@
+
+.env
+backend/.env
+mobile-app/.env
+
+__pycache__/
+*.pyc
+*.log
+backend/uploads/
+backend/app.db
