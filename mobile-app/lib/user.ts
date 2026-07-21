@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { API_URL } from './api';
+import { apiFetch } from './api';
 
 export const NICKNAME_KEY = 'nickname';
 
@@ -39,7 +39,7 @@ export const getDisplayNickname = async () => {
   }
 
   try {
-    const response = await fetch(`${API_URL}/me`, {
+    const response = await apiFetch('/me', {
       headers: {
         Authorization: `Bearer ${token}`,
       },

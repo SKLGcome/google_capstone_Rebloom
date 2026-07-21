@@ -2,7 +2,42 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 
 export const API_URL =
-  'https://payton-unconfided-reluctantly.ngrok-free.dev';
+  process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/$/, '') ??
+  'http://192.168.219.108:8000';
+
+let apiRequestSequence = 0;
+
+console.info('[API] configuration', {
+  baseUrl: API_URL,
+  source: process.env.EXPO_PUBLIC_API_URL ? 'EXPO_PUBLIC_API_URL' : 'fallback',
+});
+
+export async function apiFetch(path: string, options: RequestInit = {}) {
+  const requestId = ++apiRequestSequence;
+  const method = options.method?.toUpperCase() ?? 'GET';
+  const url = `${API_URL}${path}`;
+  const startedAt = Date.now();
+
+  console.info(`[API #${requestId}] -> ${method} ${url}`);
+
+  try {
+    const response = await fetch(url, options);
+
+    console.info(
+      `[API #${requestId}] <- ${response.status} ${method} ${url} (${Date.now() - startedAt}ms)`
+    );
+
+    return response;
+  } catch (error) {
+    console.error(`[API #${requestId}] !! ${method} ${url}`, {
+      elapsedMs: Date.now() - startedAt,
+      name: error instanceof Error ? error.name : undefined,
+      message: error instanceof Error ? error.message : String(error),
+      cause: error instanceof Error ? error.cause : undefined,
+    });
+    throw error;
+  }
+}
 
 // 로그인 세션만 제거하고, 최초 진단 완료 여부는 기기에 유지합니다.
 const AUTH_STORAGE_KEYS = ['access_token', 'nickname'];
@@ -46,7 +81,7 @@ export async function fetchWithAuth(path: string, options: RequestInit = {}) {
     throw new Error(SESSION_EXPIRED_MESSAGE);
   }
 
-  return fetch(`${API_URL}${path}`, {
+  return apiFetch(path, {
     ...options,
     headers: {
       ...options.headers,
@@ -56,7 +91,7 @@ export async function fetchWithAuth(path: string, options: RequestInit = {}) {
 }
 
 export async function getRecommendation(type: string) {
-  const response = await fetch(`${API_URL}/recommend`, {
+  const response = await apiFetch('/recommend', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -68,7 +103,7 @@ export async function getRecommendation(type: string) {
 }
 
 export async function login(user_id: string, password: string) {
-  const response = await fetch(`${API_URL}/login`, {
+  const response = await apiFetch('/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -87,7 +122,7 @@ export async function signup(
   password: string,
   nickname: string
 ) {
-  const response = await fetch(`${API_URL}/signup`, {
+  const response = await apiFetch('/signup', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

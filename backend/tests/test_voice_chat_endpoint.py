@@ -17,7 +17,14 @@ if "langchain_neo4j" not in sys.modules:
     sys.modules["langchain_neo4j"] = langchain_neo4j_stub
 
 from api.main import app
+from api.routers import chat
 
 
 def test_voice_chat_route_exists():
-    assert any(route.path == "/chat/voice" for route in app.routes)
+    assert any(route.path == "/chat/voice" for route in chat.router.routes)
+
+
+def test_split_voice_chat_routes_exist():
+    paths = {route.path for route in chat.router.routes}
+    assert "/chat/transcribe" in paths
+    assert "/chat/respond" in paths

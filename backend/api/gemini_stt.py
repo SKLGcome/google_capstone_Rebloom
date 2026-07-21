@@ -1,38 +1,33 @@
+import logging
 import os
-import mimetypes
+import time
+
 from google import genai
+from google.genai import types
 
+
+logger = logging.getLogger(__name__)
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+STT_MODEL = os.getenv("GEMINI_STT_MODEL", "gemini-2.5-flash")
 
 
-def transcribe_audio_with_gemini(file_path: str) -> str:
-    print("=== Gemini STT 시작 ===")
-    print("file_path:", file_path)
-    print("exists:", os.path.exists(file_path))
-    print("size:", os.path.getsize(file_path))
-
-    mime_type, _ = mimetypes.guess_type(file_path)
-    print("guessed mime_type:", mime_type)
-
-    audio_file = client.files.upload(
-        file=file_path,
-        config={"mime_type": mime_type or "audio/mp4"}
-    )
-
-    print("uploaded file:", audio_file)
-    print("uploaded name:", getattr(audio_file, "name", None))
-    print("uploaded mime:", getattr(audio_file, "mime_type", None))
-    print("uploaded state:", getattr(audio_file, "state", None))
-
+def transcribe_audio_with_gemini(
+    audio_bytes: bytes,
+    mime_type: str = "audio/mp4",
+) -> str:
+    """Transcribe a small audio recording without a second Files API upload."""
+    started_at = time.perf_counter()
     response = client.models.generate_content(
-        model="gemini-2.5-pro",
+        model=STT_MODEL,
         contents=[
-            audio_file,
-            "이 음성 파일의 한국어 발화를 텍스트로 정확히 변환해줘. 설명 없이 변환된 문장만 출력해.",
+            types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
+            "한국어 음성을 정확히 받아쓰고, 설명 없이 변환된 문장만 출력해.",
         ],
     )
-
-    print("Gemini raw response:", response)
-    print("Gemini text:", response.text)
-
+    logger.info(
+        "voice_stt_complete model=%s audio_size_bytes=%d elapsed_ms=%.1f",
+        STT_MODEL,
+        len(audio_bytes),
+        (time.perf_counter() - started_at) * 1000,
+    )
     return response.text.strip()

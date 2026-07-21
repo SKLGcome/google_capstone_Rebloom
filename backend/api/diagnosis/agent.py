@@ -49,10 +49,10 @@ def check_answers_before_agent(
     return None
 
 
-llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0)
+diagnosis_llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0)
 
 diagnosis_agent = create_agent(
-    model=llm,
+    model=diagnosis_llm,
     tools=diagnosis_tools,
     middleware=[check_answers_before_agent],
     system_prompt="""
@@ -134,8 +134,11 @@ nickname: {nickname}
     return json.loads(last_content)
 
 
+chat_llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
+
+
 chat_agent = create_agent(
-    model=llm,
+    model=chat_llm,
     tools=[],
     system_prompt="""
 너는 RE:Bloom 진단 전 인터뷰를 위한 대화 에이전트다.

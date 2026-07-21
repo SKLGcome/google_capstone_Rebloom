@@ -15,7 +15,7 @@ import {
   View,
 } from 'react-native';
 
-import { API_URL, runDiagnosis } from '../../lib/api';
+import { apiFetch, runDiagnosis } from '../../lib/api';
 import { getDisplayNickname } from '../../lib/user';
 
 type Message = {
@@ -32,12 +32,35 @@ const initialMessages: Message[] = [
   },
 ];
 
+const VOICE_RECORDING_OPTIONS: Audio.RecordingOptions = {
+  isMeteringEnabled: false,
+  android: {
+    extension: '.m4a',
+    outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+    audioEncoder: Audio.AndroidAudioEncoder.AAC,
+    sampleRate: 16000,
+    numberOfChannels: 1,
+    bitRate: 64000,
+  },
+  ios: {
+    extension: '.m4a',
+    outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
+    audioQuality: Audio.IOSAudioQuality.MEDIUM,
+    sampleRate: 16000,
+    numberOfChannels: 1,
+    bitRate: 64000,
+  },
+  web: {
+    mimeType: 'audio/webm',
+    bitsPerSecond: 64000,
+  },
+};
+
 export default function Diagnose() {
   const router = useRouter();
   const { reset } = useLocalSearchParams();
 
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-
   const [loading, setLoading] = useState(false);
   const [diagnosing, setDiagnosing] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -96,7 +119,7 @@ export default function Diagnose() {
       });
 
       const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
+        VOICE_RECORDING_OPTIONS
       );
 
       setRecording(recording);
@@ -136,21 +159,38 @@ export default function Diagnose() {
       const formData = new FormData();
       formData.append('file', {
         uri,
-        name: 'voice.m4a',
-        type: 'audio/m4a',
+        name: Platform.OS === 'web' ? 'voice.webm' : 'voice.m4a',
+        type: Platform.OS === 'web' ? 'audio/webm' : 'audio/mp4',
       } as any);
-      formData.append('messages', JSON.stringify(messages));
 
-      const response = await fetch(`${API_URL}/chat/voice`, {
+      const transcriptionResponse = await apiFetch('/chat/transcribe', {
         method: 'POST',
         body: formData,
       });
+      const transcriptionData = await transcriptionResponse.json();
 
+      if (!transcriptionResponse.ok) {
+        throw new Error(transcriptionData.detail || '음성 변환 실패');
+      }
+
+      const userMessage: Message = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        content: transcriptionData.user_text,
+      };
+      const messagesWithUser = [...messages, userMessage];
+      setMessages(messagesWithUser);
+
+      const responseFormData = new FormData();
+      responseFormData.append('messages', JSON.stringify(messagesWithUser));
+      const response = await apiFetch('/chat/respond', {
+        method: 'POST',
+        body: responseFormData,
+      });
       const data = await response.json();
-      console.log(data);
 
       if (!response.ok) {
-        throw new Error(data.detail || '음성 채팅 실패');
+        throw new Error(data.detail || '대화 응답 생성 실패');
       }
 
       const normalizedMessages = normalizeMessages(data.messages);
