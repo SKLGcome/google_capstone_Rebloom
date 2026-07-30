@@ -1,6 +1,6 @@
 import { FontAwesome } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { getLatestDiagnosis } from '../../lib/api';
@@ -19,6 +19,8 @@ type DiagnosisResult = {
   goal?: string;
   scores?: Scores;
 };
+
+const RESULT_STALE_TIME_MS = 60_000;
 
 const scoreMeta: Record<ScoreKey, { label: string; description: string }> = {
   energy: {
@@ -107,7 +109,7 @@ export default function Result() {
         scores: paramScores,
       }
     : null;
-  const displayedResult = routedResult ?? result;
+  const displayedResult = result ?? routedResult;
   const recoveryType = displayedResult?.type;
   const typeInfo = typeMap[recoveryType as keyof typeof typeMap];
   const summaryText = displayedResult?.summary;
@@ -121,18 +123,32 @@ export default function Result() {
     getDisplayNickname().then(setNickname);
   }, []);
 
-  useEffect(() => {
-    const loadLatestDiagnosis = async () => {
-      if (paramRecoveryType) {
+  const lastLoadedAt = useRef(0);
+  const isLoading = useRef(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (
+        isLoading.current ||
+        Date.now() - lastLoadedAt.current < RESULT_STALE_TIME_MS
+      ) {
         return;
       }
 
-      const data = await getLatestDiagnosis();
-      setResult(data);
-    };
-
-    loadLatestDiagnosis();
-  }, [paramRecoveryType]);
+      isLoading.current = true;
+      void getLatestDiagnosis()
+        .then((data) => {
+          setResult(data);
+          lastLoadedAt.current = Date.now();
+        })
+        .catch((error) => {
+          console.warn('최신 진단 결과를 불러오지 못했습니다.', error);
+        })
+        .finally(() => {
+          isLoading.current = false;
+        });
+    }, [])
+  );
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>

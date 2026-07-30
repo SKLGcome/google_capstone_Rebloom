@@ -5,7 +5,8 @@ import {
   getRoomMessages,
   sendRoomMessage,
 } from '@/lib/api';
-import { useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -18,14 +19,21 @@ import {
   View,
 } from 'react-native';
 
+const ROOM_STALE_TIME_MS = 60_000;
+
 export default function ChatRoom() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [mission, setMission] = useState<DailyMission | null>(null);
   const [isMissionLoading, setIsMissionLoading] = useState(true);
   const [input, setInput] = useState('');
+  const lastLoadedAt = useRef(0);
+  const isLoading = useRef(false);
 
-  const loadRoom = async () => {
+  const loadRoom = useCallback(async () => {
+    if (isLoading.current) return;
+
+    isLoading.current = true;
     try {
       const diagnosis = await getLatestDiagnosis();
       const type = diagnosis.type;
@@ -43,6 +51,7 @@ export default function ChatRoom() {
       }
 
       setMessages(messageResult.value);
+      lastLoadedAt.current = Date.now();
 
       if (missionResult.status === 'fulfilled') {
         setMission(missionResult.value);
@@ -57,9 +66,10 @@ export default function ChatRoom() {
         error instanceof Error ? error.message : '채팅방을 불러오지 못했습니다.'
       );
     } finally {
+      isLoading.current = false;
       setIsMissionLoading(false);
     }
-  };
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim() || !roomId) return;
@@ -77,9 +87,13 @@ export default function ChatRoom() {
     }
   };
 
-  useEffect(() => {
-    loadRoom();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      if (Date.now() - lastLoadedAt.current >= ROOM_STALE_TIME_MS) {
+        void loadRoom();
+      }
+    }, [loadRoom])
+  );
 
   if (!roomId) {
     return (

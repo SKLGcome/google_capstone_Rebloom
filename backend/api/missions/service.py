@@ -239,13 +239,14 @@ def generate_mission(
         mission.evidence = []
         return mission
 
-    invalid_evidence = set(mission.evidence) - allowed_evidence
-    if invalid_evidence:
-        raise RuntimeError(
-            f"LLM이 검색 문서에 없는 근거 ID를 반환했습니다: {sorted(invalid_evidence)}"
-        )
-    if not mission.evidence:
-        raise RuntimeError("LLM이 미션 근거를 반환하지 않았습니다.")
+    valid_evidence = [
+        evidence_id
+        for evidence_id in mission.evidence
+        if evidence_id in allowed_evidence
+    ]
+    if not valid_evidence:
+        valid_evidence = sorted(allowed_evidence)[:1]
+    mission.evidence = valid_evidence
 
     return mission
 

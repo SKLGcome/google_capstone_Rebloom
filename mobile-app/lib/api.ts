@@ -1,9 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 
-export const API_URL =
-  process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/$/, '') ??
-  'http://192.168.219.108:8000';
+const envApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+
+if (!envApiUrl) {
+  throw new Error('EXPO_PUBLIC_API_URL이 설정되지 않았습니다.');
+}
+
+export const API_URL = envApiUrl.replace(/\/$/, '');
 
 let apiRequestSequence = 0;
 

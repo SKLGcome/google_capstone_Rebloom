@@ -70,6 +70,7 @@ async def run_daily_mission_scheduler() -> None:
     """서버 시작 시 누락 미션을 채우고 이후 매일 자정에 실행한다."""
 
     while True:
+        mission_date = korea_today()
         try:
             await _generate_missions_for_today()
         except asyncio.CancelledError:
@@ -77,5 +78,13 @@ async def run_daily_mission_scheduler() -> None:
             raise
         except Exception:
             logger.exception("Daily mission generation failed unexpectedly")
+
+        current_date = korea_today()
+        if current_date != mission_date:
+            logger.info(
+                "Date changed during mission generation; starting generation for %s",
+                current_date,
+            )
+            continue
 
         await asyncio.sleep(seconds_until_next_midnight())
